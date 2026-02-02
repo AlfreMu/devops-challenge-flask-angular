@@ -1,0 +1,12 @@
+version: "3.9"
+services:
+  frontend:
+    image: ghcr.io/alfremu/angular-conduit:latest
+    ports:
+      - "8080:80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
