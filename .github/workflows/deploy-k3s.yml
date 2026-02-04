@@ -1,29 +1,27 @@
-name: Deploy to k3s (manual)
+name: Deploy to k3s (manual, self-hosted)
 
 on:
   workflow_dispatch:
 
-permissions:
-  contents: read
-
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     steps:
-      - name: Deploy via SSH (git pull + kubectl apply)
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            set -e
-            cd "${{ secrets.EC2_REPO_PATH }}"
-            git pull
-            sudo kubectl apply -f k8s/namespace.yml
-            sudo kubectl apply -f k8s/backend/
-            sudo kubectl apply -f k8s/frontend/
-            sudo kubectl rollout status deployment/backend -n devops-challenge --timeout=120s
-            sudo kubectl rollout status deployment/frontend -n devops-challenge --timeout=120s
-            sudo kubectl get pods -n devops-challenge
-            sudo kubectl get svc -n devops-challenge
+      - name: Update repo
+        run: |
+          cd /home/ubuntu/devops-challenge-flask-angular
+          git pull
+
+      - name: Apply manifests
+        run: |
+          cd /home/ubuntu/devops-challenge-flask-angular
+          sudo kubectl apply -f k8s/namespace.yml
+          sudo kubectl apply -f k8s/backend/
+          sudo kubectl apply -f k8s/frontend/
+
+      - name: Verify rollout
+        run: |
+          sudo kubectl rollout status deployment/backend -n devops-challenge --timeout=120s
+          sudo kubectl rollout status deployment/frontend -n devops-challenge --timeout=120s
+          sudo kubectl get pods -n devops-challenge
+          sudo kubectl get svc -n devops-challenge
