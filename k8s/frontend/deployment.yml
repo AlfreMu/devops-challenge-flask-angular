@@ -1,8 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: angular
-  namespace: leafnoise-challenge
+  name: frontend
+  namespace: devops-challenge
   labels:
     app: angular
 spec:
@@ -17,9 +17,16 @@ spec:
     spec:
       containers:
         - name: angular
-          image: ghcr.io/alfremu/angular-conduit:latest
+          image: ghcr.io/alfremu/devops-challenge-flask-angular-frontend:latest
           ports:
             - containerPort: 80
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
           readinessProbe:
             httpGet:
               path: /
