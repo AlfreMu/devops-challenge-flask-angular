@@ -1,40 +1,73 @@
-name: Build & Push Angular (GHCR)
+name: Build & Push (Backend + Frontend)
+
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - ".github/workflows/build-push.yml"
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - ".github/workflows/build-push.yml"
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
-  docker:
+  backend:
+    name: Build & Push Backend (Flask)
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
+    if: |
+      github.event_name != 'pull_request' ||
+      contains(github.event.pull_request.changed_files, 'backend')
     steps:
       - uses: actions/checkout@v4
 
-      - name: Log in a GHCR
+      - name: Login a GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Nombre a imagen
-        id: vars
-        run: |
-          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          IMAGE="ghcr.io/${OWNER}/angular-conduit"
-          TAG="${GITHUB_SHA::7}"
-          echo "image=${IMAGE}" >> $GITHUB_OUTPUT
-          echo "tag=${TAG}" >> $GITHUB_OUTPUT
-
-      - name: Build y Push
+      - name: Build y push backend
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: ./Dockerfile
-          push: true
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
           tags: |
-            ${{ steps.vars.outputs.image }}:${{ steps.vars.outputs.tag }}
-            ${{ steps.vars.outputs.image }}:latest
+            ghcr.io/alfremu/devops-challenge-flask-angular-backend:${{ github.sha }}
+            ghcr.io/alfremu/devops-challenge-flask-angular-backend:latest
+
+  frontend:
+    name: Build & Push Frontend (Angular)
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name != 'pull_request' ||
+      contains(github.event.pull_request.changed_files, 'frontend')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login a GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build y push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            ghcr.io/alfremu/devops-challenge-flask-angular-frontend:${{ github.sha }}
+            ghcr.io/alfremu/devops-challenge-flask-angular-frontend:latest
