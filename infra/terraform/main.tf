@@ -34,6 +34,15 @@ resource "aws_security_group" "app_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+ingress {
+  description = "Grafana NodePort"
+  from_port   = 32000
+  to_port     = 32000
+  protocol    = "tcp"
+  cidr_blocks = [var.ssh_allowed_cidr]
+}
+
+
   egress {
     description = "Salida a Internet"
     from_port   = 0
