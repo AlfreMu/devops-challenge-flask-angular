@@ -1,8 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: flask
-  namespace: leafnoise-challenge-flask
+  name: backend
+  namespace: devops-challenge
   labels:
     app: flask
 spec:
@@ -17,9 +17,16 @@ spec:
     spec:
       containers:
         - name: flask
-          image: ghcr.io/alfremu/flask-example:latest
+          image: ghcr.io/alfremu/devops-challenge-flask-angular-backend:latest
           ports:
             - containerPort: 5000
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
           readinessProbe:
             httpGet:
               path: /
