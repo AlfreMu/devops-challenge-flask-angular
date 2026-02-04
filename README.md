@@ -40,7 +40,8 @@ docker compose down
 
 ## CI/CD
 [![CI](https://github.com/AlfreMu/devops-challenge-flask-angular/actions/workflows/build-push.yml/badge.svg?branch=main)](https://github.com/AlfreMu/devops-challenge-flask-angular/actions/workflows/build-push.yml)
-
+---
+[![CD](https://github.com/AlfreMu/devops-challenge-flask-angular/actions/workflows/deploy-k3s.yml/badge.svg?branch=main)](https://github.com/AlfreMu/devops-challenge-flask-angular/actions/workflows/deploy-k3s.yml)
 ---
 El proyecto cuenta con un pipeline de CI/CD unificado implementado con GitHub Actions, encargado de construir y publicar imágenes Docker del backend y frontend en GitHub Container Registry (GHCR).
 
