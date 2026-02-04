@@ -1,7 +1,5 @@
 # DevOps Challenge — Flask (Backend) + Angular (Frontend)
 
-Proyecto DevOps Jr.  
-
 ## Objetivo: 
 Demostrar un flujo completo y simple de **CI/CD, Docker, Kubernetes, IaC y Cloud**.
 
