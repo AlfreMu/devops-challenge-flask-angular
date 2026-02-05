@@ -1,63 +1,84 @@
+[![CI](https://github.com/AlfreMu/devops-challenge-flask-angular/actions/workflows/build-push.yml/badge.svg?branch=main)](https://github.com/AlfreMu/devops-challenge-flask-angular/actions/workflows/build-push.yml)
+<br>
+[![CD](https://github.com/AlfreMu/devops-challenge-flask-angular/actions/workflows/deploy-k3s.yml/badge.svg?branch=main)](https://github.com/AlfreMu/devops-challenge-flask-angular/actions/workflows/deploy-k3s.yml)
+---
+
 # CI/CD — GitHub Actions
 
-Este proyecto utiliza un pipeline de **CI/CD unificado** implementado con **GitHub Actions**, orientado a un monorepo con backend (Flask) y frontend (Angular).
+Este documento describe cómo funciona el flujo de **Integración Continua (CI)** y **Despliegue Continuo (CD)** del proyecto.
 
-El objetivo del pipeline es automatizar la construcción y publicación de imágenes Docker, manteniendo un flujo simple, reproducible y alineado a prácticas DevOps reales.
+---
+## 🔁 Integración Continua (CI)
+
+### Descripción
+
+La **Integración Continua (CI)** se ejecuta automáticamente mediante **GitHub Actions** ante cambios relevantes en el repositorio, específicamente cuando se modifican:
+
+- el código del **backend** (`backend/`)
+- el código del **frontend** (`frontend/`)
+- los archivos de **workflows** (`.github/workflows/`)
+
+Responsabilidades principales:
+
+- Build de imágenes Docker
+- Taggeo consistente y trazable
+- Publicación de imágenes en GitHub Container Registry (GHCR)
 
 ---
 
-## Ubicación del workflow
+### Workflow de CI
 
-El workflow se encuentra en:
-📄 [.github/workflows/build-push.yml](.github/workflows/build-push.yml)
-
-Es un único pipeline que maneja ambos servicios del proyecto.
-
----
-
-## Qué hace el pipeline
-
-El pipeline realiza las siguientes tareas:
-
-- Se ejecuta en:
-  - push a la rama `main`
-  - pull request contra `main`
-- Construye imágenes Docker para:
-  - Backend (Flask)
-  - Frontend (Angular)
-- Publica las imágenes en **GitHub Container Registry (GHCR)**.
-- Utiliza autenticación nativa mediante `GITHUB_TOKEN`.
+- **Archivo:** [.github/workflows/build-push.yml](.github/workflows/build-push.yml)
+- **Triggers:**
+  - `push` a la rama `main`
+  - cambios en:
+    - `backend/`
+    - `frontend/`
+    - `.github/workflows/`
 
 ---
 
-## Imágenes generadas
+### Flujo del pipeline
 
-Las imágenes Docker publicadas por el pipeline son:
+El workflow ejecuta los siguientes pasos:
 
-- https://ghcr.io/alfremu/devops-challenge-flask-angular-backend
-- https://ghcr.io/alfremu/devops-challenge-flask-angular-frontend
-
-Estas imágenes son utilizadas tanto por Docker Compose como por Kubernetes, evitando builds locales y asegurando coherencia entre entornos.
+1. Build de la imagen Docker del **backend** (Flask)
+2. Build de la imagen Docker del **frontend** (Angular + Nginx)
+3. Push de ambas imágenes a **GHCR**
+4. Aplicación de tags:
+   - `latest`
+   - `sha-<commit>`
 
 ---
 
-## Estrategia de tags
+### Imágenes publicadas
+
+Las imágenes generadas por el pipeline son:
+
+- **Backend**  
+  `ghcr.io/alfremu/devops-challenge-flask-angular-backend`
+
+- **Frontend**  
+  `ghcr.io/alfremu/devops-challenge-flask-angular-frontend`
+
+---
+
+### Estrategia de tags
 
 Cada imagen se publica con dos tags:
 
 - **latest**  
   Generado automáticamente en cada push a la rama `main`.
 
-- **sha**  
-  Generado siempre, permite trazar exactamente qué commit produjo cada imagen.
+- **sha-<commit>**  
+  Tag inmutable que permite identificar exactamente qué commit generó la imagen.
 
-Ejemplo de tags:
+Ejemplo:
 
-- ghcr.io/alfremu/devops-challenge-flask-angular-backend:latest  
-  👉 https://ghcr.io/alfremu/devops-challenge-flask-angular-backend
-
-- ghcr.io/alfremu/devops-challenge-flask-angular-backend:3f2a1c9  
-  👉 https://ghcr.io/alfremu/devops-challenge-flask-angular-backend
+```bash
+ghcr.io/alfremu/devops-challenge-flask-angular-backend:latest
+ghcr.io/alfremu/devops-challenge-flask-angular-backend:3f2a1c9
+```
 
 Esta estrategia facilita:
 - debugging
@@ -70,23 +91,77 @@ Esta estrategia facilita:
 
 - El pipeline contiene jobs independientes para backend y frontend.
 - Cada job se ejecuta solo si hay cambios en su directorio correspondiente.
-- Esto evita builds innecesarios y reduce tiempos de ejecución.
+- Ejecución condicional según cambios por directorio
+- Naming consistente de imágenes y tags
 
-Este enfoque permite escalar el proyecto agregando nuevos servicios sin duplicar pipelines.
+Este diseño reduce tiempos de ejecución y facilita escalar el proyecto agregando nuevos servicios sin duplicar pipelines.
+
+## 🚀 Entrega Continua (CD)
+
+### Descripción
+
+La **Entrega Continua (CD)** se implementa mediante **GitHub Actions** utilizando un enfoque **controlado y explícito**, adecuado para un proyecto de portfolio.
+
+El despliegue **no es automático**: se ejecuta manualmente para mantener control total sobre cuándo y cómo se aplican los cambios en el entorno real.
+
+Responsabilidades principales:
+
+- Actualizar el código del repositorio en la EC2
+- Desplegar la aplicación en **Kubernetes (k3s)**
+- Utilizar imágenes previamente construidas en la etapa de CI
 
 ---
 
-## Relación con Docker Compose y Kubernetes
+### Workflow de CD
 
-Las imágenes generadas por el pipeline son consumidas directamente por:
+- **Archivo:** [.github/workflows/deploy-k3s.yml](.github/workflows/deploy-k3s.yml)
+- **Trigger:**
+  - `workflow_dispatch` (ejecución manual)
 
-- **Docker Compose**  
-  Para validación local del sistema completo.
+Este diseño evita despliegues automáticos no deseados y permite validar cada cambio antes de aplicarlo en el cluster.
 
-- **Kubernetes**  
-  Para despliegue en un cluster real.
+---
 
-De esta forma se separa claramente:
+### Infraestructura de despliegue
 
-- el proceso de **build** (CI/CD)
-- del proceso de **ejecución** (Compose / Kubernetes)
+El despliegue se realiza sobre:
+
+- **EC2 en AWS**
+- **Kubernetes (k3s)** en un cluster single-node
+- **Self-hosted runner** ejecutándose dentro de la EC2
+
+El runner tiene acceso directo al cluster y ejecuta los comandos de despliegue sin depender de servicios externos.
+
+---
+
+### Flujo del despliegue
+
+Cuando se ejecuta el workflow de CD, se realizan los siguientes pasos:
+
+1. Sincronización del repositorio (`git pull`)
+2. Aplicación de manifiestos Kubernetes (`kubectl apply`)
+3. Actualización de los workloads usando imágenes desde **GHCR**
+4. Verificación del estado de los pods desplegados
+
+El despliegue reutiliza las imágenes generadas en CI, garantizando coherencia entre build y runtime.
+
+---
+
+### Características clave del CD
+
+- Despliegue manual y controlado
+- Separación clara entre **CI (build)** y **CD (deploy)**
+- Uso de self-hosted runner para acceso directo al entorno
+- Sin GitOps ni automatizaciones innecesarias
+- Flujo simple, reproducible y fácil de auditar
+
+---
+
+### Relación con CI
+
+El flujo completo CI/CD queda definido de la siguiente manera:
+
+- **CI:** build y publicación de imágenes Docker en GHCR
+- **CD:** despliegue manual en Kubernetes consumiendo esas imágenes
+
+Este enfoque refleja un pipeline realista y común en equipos DevOps, priorizando claridad, control y trazabilidad.
