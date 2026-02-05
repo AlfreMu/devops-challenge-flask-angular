@@ -93,7 +93,7 @@ El proyecto incluye manifests de Kubernetes unificados y simples, preparados par
 - Self-hosted runner para CD
 
 👉 Ver documentación técnica de Infraestructura:  
-📄 [Infraesctructura](docs/infra.md)
+📄 [Infraestructura](docs/infra.md)
 
 ## Observabilidad:
 - Stack de observabilidad instalado vía Helm
@@ -105,7 +105,7 @@ El proyecto incluye manifests de Kubernetes unificados y simples, preparados par
 - Dashboards funcionales y targets en estado UP
   
 👉 Ver documentación técnica de Observabilidad:  
-📄 [Infraesctructura](docs/observability.md)
+📄 [Observabilidad](docs/observability.md)
 
 ---
 
